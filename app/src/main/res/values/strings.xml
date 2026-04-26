@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App -->
+    <string name="app_name">GuardianEye</string>
+    <string name="app_title">Guardian Eye</string>
+    <string name="tagline">Protection invisible. Surveillance totale.</string>
+
+
+    <!-- Login -->
+    <string name="login_subtitle">Connectez-vous pour protéger votre appareil</string>
+    <string name="email">Email</string>
+    <string name="password">Mot de passe</string>
+    <string name="btn_login">SE CONNECTER</string>
+    <string name="go_to_register">Pas encore de compte ? S\'inscrire</string>
+
+
+    <!-- Register -->
+    <string name="register_title">Créer un compte</string>
+    <string name="secret_code">Code secret (pour désinstaller)</string>
+    <string name="btn_register">S\'INSCRIRE</string>
+    <string name="go_to_login">Déjà un compte ? Se connecter</string>
+
+    <!-- Main -->
+    <string name="protection_active">🛡️ Protection Active</string>
+    <string name="device_id_format">ID : %1$s...</string>
+    <string name="device_status_title">Statut de l\'appareil</string>
+    <string name="status_normal">NORMAL</string>
+    <string name="btn_logout">SE DÉCONNECTER</string>
+
+    <!-- Splash -->
+    <string name="logo_description">Logo Guardian Eye</string>
+
+    <!-- Admin -->
+    <string name="device_admin_description">
+        Guardian Eye a besoin des droits administrateur
+        pour protéger votre appareil contre le vol.
+    </string>
+</resources>

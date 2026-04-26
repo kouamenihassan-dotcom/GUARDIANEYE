@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "25027230367",
+    "firebase_url": "https://guardianeye-9d027-default-rtdb.firebaseio.com",
+    "project_id": "guardianeye-9d027",
+    "storage_bucket": "guardianeye-9d027.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:25027230367:android:7669d20f0852c7317a40aa",
+        "android_client_info": {
+          "package_name": "com.example.guardianeye"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC7IGSrnpmtNW_i3UNX_-I_awiq7x4nrCg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

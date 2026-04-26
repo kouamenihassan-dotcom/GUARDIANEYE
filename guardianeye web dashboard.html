@@ -1,0 +1,835 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guardian Eye - Dashboard</title>
+    
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-database-compat.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', sans-serif;
+        }
+
+        body {
+            background: #0D1117;
+            color: #FFFFFF;
+            min-height: 100vh;
+        }
+
+        /* ─── LOGIN PAGE ─── */
+        #loginPage {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .login-card {
+            background: #161B22;
+            border: 1px solid #30363D;
+            border-radius: 16px;
+            padding: 48px;
+            width: 420px;
+        }
+
+        .login-card h1 {
+            color: #58A6FF;
+            text-align: center;
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+
+        .login-card p {
+            color: #8B949E;
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 14px;
+            background: #0D1117;
+            border: 1px solid #30363D;
+            border-radius: 8px;
+            color: #FFFFFF;
+            font-size: 16px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus {
+            border-color: #58A6FF;
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 14px;
+            background: #238636;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: background 0.2s;
+        }
+
+        .btn-primary:hover {
+            background: #2EA043;
+        }
+
+        .error-box {
+            background: #F8514920;
+            border: 1px solid #F85149;
+            color: #F85149;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            display: none;
+        }
+
+        /* ─── DASHBOARD ─── */
+        #dashboardPage {
+            display: none;
+        }
+
+        .header {
+            background: #161B22;
+            border-bottom: 1px solid #30363D;
+            padding: 16px 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header h1 {
+            color: #58A6FF;
+            font-size: 22px;
+        }
+
+        .btn-logout {
+            background: #F85149;
+            color: #fff;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .content {
+            padding: 24px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* ─── CARDS ─── */
+        .card {
+            background: #161B22;
+            border: 1px solid #30363D;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 24px;
+        }
+
+        .card h3 {
+            color: #58A6FF;
+            margin-bottom: 16px;
+            font-size: 18px;
+        }
+
+        /* ─── STATUS CARD ─── */
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        .status-item {
+            background: #0D1117;
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+        }
+
+        .status-item .label {
+            color: #8B949E;
+            font-size: 12px;
+            margin-bottom: 8px;
+        }
+
+        .status-item .value {
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .status-normal { color: #238636; }
+        .status-vole { color: #F85149; }
+        .status-locked { color: #F0883E; }
+
+        /* ─── CONTROL BUTTONS ─── */
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+
+        .btn-control {
+            padding: 20px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: opacity 0.2s, transform 0.1s;
+        }
+
+        .btn-control:hover {
+            opacity: 0.9;
+            transform: translateY(-2px);
+        }
+
+        .btn-control:active {
+            transform: translateY(0);
+        }
+
+        .btn-stolen {
+            background: #F85149;
+            color: #fff;
+        }
+
+        .btn-lock {
+            background: #F0883E;
+            color: #fff;
+        }
+
+        .btn-normal {
+            background: #238636;
+            color: #fff;
+        }
+
+        .btn-wipe {
+            background: #6E40C9;
+            color: #fff;
+        }
+
+        /* ─── GPS ─── */
+        .gps-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin-bottom: 16px;
+        }
+
+        .gps-item {
+            background: #0D1117;
+            padding: 16px;
+            border-radius: 8px;
+        }
+
+        .gps-item .gps-label {
+            color: #8B949E;
+            font-size: 12px;
+            margin-bottom: 4px;
+        }
+
+        .gps-item .gps-value {
+            color: #FFFFFF;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .btn-maps {
+            display: inline-block;
+            background: #58A6FF;
+            color: #fff;
+            padding: 10px 24px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+
+        .btn-maps:hover {
+            background: #79B8FF;
+        }
+
+        .no-data {
+            color: #8B949E;
+            text-align: center;
+            padding: 32px;
+        }
+
+        /* ─── PHOTOS ─── */
+        .photos-grid {
+            display: grid;
+            grid-template-columns: repeat(
+                auto-fill, minmax(200px, 1fr)
+            );
+            gap: 16px;
+        }
+
+        .photo-item {
+            background: #0D1117;
+            border: 1px solid #30363D;
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        .photo-item img {
+            width: 100%;
+            height: 160px;
+            object-fit: cover;
+        }
+
+        .photo-item .photo-time {
+            color: #8B949E;
+            font-size: 12px;
+            padding: 8px;
+            text-align: center;
+        }
+
+        /* ─── DEVICES LIST ─── */
+        .device-item {
+            background: #0D1117;
+            border: 1px solid #30363D;
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+
+        .device-item:hover {
+            border-color: #58A6FF;
+        }
+
+        .device-item.selected {
+            border-color: #238636;
+        }
+
+        .device-id {
+            color: #58A6FF;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .device-status {
+            font-size: 12px;
+        }
+
+        /* ─── ALERT ─── */
+        .alert {
+            position: fixed;
+            top: 80px;
+            right: 24px;
+            padding: 16px 24px;
+            border-radius: 8px;
+            font-weight: bold;
+            z-index: 1000;
+            display: none;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from { transform: translateX(100px); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+
+        .alert-success {
+            background: #238636;
+            color: #fff;
+        }
+
+        .alert-error {
+            background: #F85149;
+            color: #fff;
+        }
+
+        /* ─── LOADING ─── */
+        .loading {
+            text-align: center;
+            color: #58A6FF;
+            padding: 32px;
+        }
+
+        @media (max-width: 768px) {
+            .status-grid,
+            .controls-grid {
+                grid-template-columns: 1fr;
+            }
+            .gps-info {
+                grid-template-columns: 1fr;
+            }
+            .login-card {
+                width: 90%;
+                padding: 32px 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- ─── LOGIN PAGE ─── -->
+<div id="loginPage">
+    <div class="login-card">
+        <h1>🛡️ Guardian Eye</h1>
+        <p>Dashboard de surveillance</p>
+
+        <div class="error-box" id="errorBox"></div>
+
+        <div class="form-group">
+            <input
+                type="email"
+                id="emailInput"
+                placeholder="Email"
+                autocomplete="email"
+            />
+        </div>
+        <div class="form-group">
+            <input
+                type="password"
+                id="passwordInput"
+                placeholder="Mot de passe"
+            />
+        </div>
+        <button
+            class="btn-primary"
+            onclick="handleLogin()"
+            id="loginBtn"
+        >
+            SE CONNECTER
+        </button>
+    </div>
+</div>
+
+<!-- ─── DASHBOARD PAGE ─── -->
+<div id="dashboardPage">
+
+    <!-- Header -->
+    <div class="header">
+        <h1>🛡️ Guardian Eye Dashboard</h1>
+        <button class="btn-logout" onclick="handleLogout()">
+            Déconnexion
+        </button>
+    </div>
+
+    <div class="content">
+
+        <!-- Statut -->
+        <div class="card">
+            <h3>📊 Statut de l'appareil</h3>
+            <div class="status-grid">
+                <div class="status-item">
+                    <div class="label">Statut actuel</div>
+                    <div class="value" id="statusDisplay">
+                        Chargement...
+                    </div>
+                </div>
+                <div class="status-item">
+                    <div class="label">Appareil ID</div>
+                    <div class="value" style="color:#58A6FF; font-size:14px" id="deviceDisplay">
+                        -
+                    </div>
+                </div>
+                <div class="status-item">
+                    <div class="label">Dernière activité</div>
+                    <div class="value" style="color:#8B949E; font-size:14px" id="lastSeenDisplay">
+                        -
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contrôles -->
+        <div class="card">
+            <h3>🎮 Contrôles à distance</h3>
+            <div class="controls-grid">
+                <button
+                    class="btn-control btn-stolen"
+                    onclick="sendCommand('VOLE')"
+                >
+                    🚨 Déclarer Volé
+                </button>
+                <button
+                    class="btn-control btn-lock"
+                    onclick="sendCommand('LOCKED')"
+                >
+                    🔒 Bloquer Appareil
+                </button>
+                <button
+                    class="btn-control btn-normal"
+                    onclick="sendCommand('NORMAL')"
+                >
+                    ✅ Mode Normal
+                </button>
+            </div>
+        </div>
+
+        <!-- GPS -->
+        <div class="card">
+            <h3>📍 Position GPS en temps réel</h3>
+            <div id="gpsContent">
+                <div class="no-data">
+                    Position non disponible.<br>
+                    Déclenchez le mode VOLÉ pour
+                    activer le GPS.
+                </div>
+            </div>
+        </div>
+
+        <!-- Appareils -->
+        <div class="card">
+            <h3>📱 Appareils enregistrés</h3>
+            <div id="devicesList">
+                <div class="loading">
+                    Chargement des appareils...
+                </div>
+            </div>
+        </div>
+
+        <!-- Photos -->
+        <div class="card">
+            <h3>📸 Photos capturées</h3>
+            <div id="photosContent">
+                <div class="no-data">
+                    Aucune photo disponible.<br>
+                    Les photos apparaissent quand
+                    le mode VOLÉ est activé.
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Alert -->
+<div class="alert" id="alertBox"></div>
+
+<script>
+    // ─── FIREBASE CONFIG ───────────────────────────────
+    // REMPLACE CES VALEURS PAR TON PROJET FIREBASE
+   const firebaseConfig = {
+    apiKey: "AIzaSyDhuKQ4s0MjE8PEIvuWGfvR1HPJc4O3zK8",
+    authDomain: "guardianeye-9d027.firebaseapp.com",
+    databaseURL: "https://guardianeye-9d027-default-rtdb.firebaseio.com",
+    projectId: "guardianeye-9d027",
+    storageBucket: "guardianeye-9d027.firebasestorage.app",
+    messagingSenderId: "25027230367",
+    appId: "1:25027230367:web:f421892f23c1f0d67a40aa",
+    measurementId: "G-5N7M0M2FNR"
+  };
+
+    // Initialiser Firebase
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+    const db = firebase.database();
+
+    let selectedDeviceId = null;
+
+    // ─── AUTH ──────────────────────────────────────────
+    auth.onAuthStateChanged((user) => {
+        if (user) {
+            showDashboard();
+            loadDevices();
+        } else {
+            showLogin();
+        }
+    });
+
+    async function handleLogin() {
+        const email = document.getElementById('emailInput').value;
+        const password = document.getElementById('passwordInput').value;
+        const btn = document.getElementById('loginBtn');
+        const errorBox = document.getElementById('errorBox');
+
+        if (!email || !password) {
+            showError('Remplissez tous les champs');
+            return;
+        }
+
+        btn.textContent = 'Connexion...';
+        btn.disabled = true;
+        errorBox.style.display = 'none';
+
+        try {
+            await auth.signInWithEmailAndPassword(email, password);
+        } catch (err) {
+            showError('Email ou mot de passe incorrect');
+            btn.textContent = 'SE CONNECTER';
+            btn.disabled = false;
+        }
+    }
+
+    function handleLogout() {
+        auth.signOut();
+    }
+
+    function showError(msg) {
+        const errorBox = document.getElementById('errorBox');
+        errorBox.textContent = msg;
+        errorBox.style.display = 'block';
+    }
+
+    // ─── NAVIGATION ────────────────────────────────────
+    function showDashboard() {
+        document.getElementById('loginPage').style.display = 'none';
+        document.getElementById('dashboardPage').style.display = 'block';
+    }
+
+    function showLogin() {
+        document.getElementById('loginPage').style.display = 'flex';
+        document.getElementById('dashboardPage').style.display = 'none';
+        document.getElementById('loginBtn').textContent = 'SE CONNECTER';
+        document.getElementById('loginBtn').disabled = false;
+    }
+
+    // ─── DEVICES ───────────────────────────────────────
+    function loadDevices() {
+        db.ref('devices').on('value', (snapshot) => {
+            const data = snapshot.val();
+            const devicesList = document.getElementById('devicesList');
+
+            if (!data) {
+                devicesList.innerHTML = `
+                    <div class="no-data">
+                        Aucun appareil enregistré
+                    </div>`;
+                return;
+            }
+
+            const devices = Object.entries(data);
+            devicesList.innerHTML = '';
+
+            devices.forEach(([deviceId, device]) => {
+                if (!selectedDeviceId) {
+                    selectDevice(deviceId);
+                }
+
+                const statusClass = getStatusClass(device.status);
+                const div = document.createElement('div');
+                div.className = `device-item ${selectedDeviceId === deviceId ? 'selected' : ''}`;
+                div.id = `device-${deviceId}`;
+                div.innerHTML = `
+                    <div class="device-id">
+                        📱 ${deviceId.substring(0, 16)}...
+                    </div>
+                    <div class="device-status ${statusClass}">
+                        Statut: ${device.status || 'NORMAL'}
+                    </div>
+                    <div style="color:#8B949E; font-size:12px; margin-top:4px">
+                        Propriétaire: ${device.owner || 'Inconnu'}
+                    </div>
+                `;
+                div.onclick = () => selectDevice(deviceId);
+                devicesList.appendChild(div);
+            });
+        });
+    }
+
+    function selectDevice(deviceId) {
+        selectedDeviceId = deviceId;
+
+        // Mettre à jour UI
+        document.querySelectorAll('.device-item')
+            .forEach(el => el.classList.remove('selected'));
+        const el = document.getElementById(`device-${deviceId}`);
+        if (el) el.classList.add('selected');
+
+        document.getElementById('deviceDisplay').textContent =
+            deviceId.substring(0, 12) + '...';
+
+        listenToStatus(deviceId);
+        listenToLocation(deviceId);
+        listenToPhotos(deviceId);
+    }
+
+    // ─── STATUS ────────────────────────────────────────
+    function listenToStatus(deviceId) {
+        db.ref(`devices/${deviceId}`).on('value', (snapshot) => {
+            const data = snapshot.val();
+            if (!data) return;
+
+            const status = data.status || 'NORMAL';
+            const statusDisplay = document.getElementById('statusDisplay');
+            statusDisplay.textContent = status;
+            statusDisplay.className = `value ${getStatusClass(status)}`;
+
+            if (data.lastSeen) {
+                const date = new Date(data.lastSeen);
+                document.getElementById('lastSeenDisplay').textContent =
+                    date.toLocaleString('fr-FR');
+            }
+        });
+    }
+
+    // ─── COMMANDES ─────────────────────────────────────
+    async function sendCommand(command) {
+        if (!selectedDeviceId) {
+            showAlert('Sélectionnez un appareil', 'error');
+            return;
+        }
+
+        const messages = {
+            'VOLE': '🚨 Mode VOLÉ activé !',
+            'LOCKED': '🔒 Appareil bloqué !',
+            'NORMAL': '✅ Mode Normal activé !'
+        };
+
+        try {
+            await db.ref(`devices/${selectedDeviceId}/status`)
+                .set(command);
+            showAlert(messages[command], 'success');
+        } catch (err) {
+            showAlert('Erreur lors de l\'envoi', 'error');
+        }
+    }
+
+    // ─── GPS ───────────────────────────────────────────
+    function listenToLocation(deviceId) {
+        db.ref(`devices/${deviceId}/location`)
+            .on('value', (snapshot) => {
+                const location = snapshot.val();
+                const gpsContent = document.getElementById('gpsContent');
+
+                if (!location) {
+                    gpsContent.innerHTML = `
+                        <div class="no-data">
+                            Position non disponible.<br>
+                            Déclenchez le mode VOLÉ.
+                        </div>`;
+                    return;
+                }
+
+                const date = new Date(location.timestamp);
+                const mapsUrl = `https://www.google.com/maps?q=${location.latitude},${location.longitude}`;
+
+                gpsContent.innerHTML = `
+                    <div class="gps-info">
+                        <div class="gps-item">
+                            <div class="gps-label">Latitude</div>
+                            <div class="gps-value">
+                                ${location.latitude.toFixed(6)}
+                            </div>
+                        </div>
+                        <div class="gps-item">
+                            <div class="gps-label">Longitude</div>
+                            <div class="gps-value">
+                                ${location.longitude.toFixed(6)}
+                            </div>
+                        </div>
+                        <div class="gps-item">
+                            <div class="gps-label">
+                                Dernière mise à jour
+                            </div>
+                            <div class="gps-value" style="font-size:14px">
+                                ${date.toLocaleString('fr-FR')}
+                            </div>
+                        </div>
+                        <div class="gps-item">
+                            <div class="gps-label">Précision</div>
+                            <div class="gps-value" style="color:#238636">
+                                GPS Actif ✅
+                            </div>
+                        </div>
+                    </div>
+                    <a href="${mapsUrl}"
+                       target="_blank"
+                       class="btn-maps">
+                        🗺️ Voir sur Google Maps
+                    </a>
+                `;
+            });
+    }
+
+    // ─── PHOTOS ────────────────────────────────────────
+    function listenToPhotos(deviceId) {
+        db.ref(`photos/${deviceId}`).on('value', (snapshot) => {
+            const data = snapshot.val();
+            const photosContent = document.getElementById('photosContent');
+
+            if (!data) {
+                photosContent.innerHTML = `
+                    <div class="no-data">
+                        Aucune photo disponible.<br>
+                        Activez le mode VOLÉ pour
+                        capturer des photos.
+                    </div>`;
+                return;
+            }
+
+            const photos = Object.values(data)
+                .sort((a, b) => b.timestamp - a.timestamp);
+
+            photosContent.innerHTML = `
+                <p style="color:#8B949E; margin-bottom:16px">
+                    ${photos.length} photo(s) capturée(s)
+                </p>
+                <div class="photos-grid" id="photosGrid"></div>
+            `;
+
+            const grid = document.getElementById('photosGrid');
+            photos.forEach((photo, index) => {
+                const date = new Date(photo.timestamp);
+                const div = document.createElement('div');
+                div.className = 'photo-item';
+                div.innerHTML = `
+                    <img
+                        src="data:image/jpeg;base64,${photo.image}"
+                        alt="Photo ${index + 1}"
+                        onerror="this.src=''"
+                    />
+                    <div class="photo-time">
+                        📅 ${date.toLocaleString('fr-FR')}
+                    </div>
+                `;
+                grid.appendChild(div);
+            });
+        });
+    }
+
+    // ─── UTILS ─────────────────────────────────────────
+    function getStatusClass(status) {
+        switch(status) {
+            case 'VOLE': return 'status-vole';
+            case 'LOCKED': return 'status-locked';
+            default: return 'status-normal';
+        }
+    }
+
+    function showAlert(message, type) {
+        const alert = document.getElementById('alertBox');
+        alert.textContent = message;
+        alert.className = `alert alert-${type}`;
+        alert.style.display = 'block';
+        setTimeout(() => {
+            alert.style.display = 'none';
+        }, 3000);
+    }
+
+    // Enter pour se connecter
+    document.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') handleLogin();
+    });
+
+</script>
+
+</body>
+</html>
