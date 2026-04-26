@@ -1,2 +1,4 @@
-# GUARDIANEYE
-Guardian Eye is a native Android anti-theft app that lets owners remotely track, photograph, and lock their stolen device via a web dashboard. Built with Kotlin and Firebase.
+#GUARDIAN-EYE#
+Guardian Eye - Android Anti-Theft Security App Guardian Eye is a full-stack mobile security application designed to help device owners track and recover their Android phones in case of theft. The app runs silently in the background and allows the owner to remotely monitor their device through a web dashboard. Key features include real-time GPS tracking, silent camera capture, remote device locking, anti-uninstall protection with a secret code, and an app camouflage system that hides the app under a custom name and icon. Tech stack : Native Android (Kotlin), Firebase Realtime Database, Firebase Authentication, Firebase Cloud Messaging, CameraX, and a React.js web dashboard.
+
+⚠️ This project is intended for personal anti-theft use only, installed by the device owner on their own device.​​​​​​​​​​​​​​​​
