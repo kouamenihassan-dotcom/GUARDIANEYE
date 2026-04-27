@@ -179,6 +179,11 @@ class MainActivity : AppCompatActivity() {
             startActivity(intent)
             finish()
         }
+        binding.btnCamouflage.setOnClickListener {
+            startActivity(
+                Intent(this@MainActivity, CamouflageActivity::class.java)
+            )
+        }
     }
 
     private fun startGuardianService() {

@@ -72,6 +72,19 @@
     </androidx.cardview.widget.CardView>
 
     <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnCamouflage"
+        android:layout_width="0dp"
+        android:layout_height="56dp"
+        android:text="MODE CAMOUFLAGE"
+        android:textColor="@color/white"
+        android:layout_marginBottom="16dp"
+        app:backgroundTint="@color/blue_primary"
+        app:cornerRadius="8dp"
+        app:layout_constraintBottom_toTopOf="@id/btnLogout"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
+    <com.google.android.material.button.MaterialButton
         android:id="@+id/btnLogout"
         android:layout_width="0dp"
         android:layout_height="56dp"

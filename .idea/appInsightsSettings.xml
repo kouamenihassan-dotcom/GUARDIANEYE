@@ -9,9 +9,9 @@
               <option name="connection">
                 <ConnectionSetting>
                   <option name="appId" value="com.example.guardianeye" />
-                  <option name="mobileSdkAppId" value="1:30330527225:android:e7db70622bbdebf5dcf128" />
-                  <option name="projectId" value="guardianeye-feb2d" />
-                  <option name="projectNumber" value="30330527225" />
+                  <option name="mobileSdkAppId" value="1:25027230367:android:7669d20f0852c7317a40aa" />
+                  <option name="projectId" value="guardianeye-9d027" />
+                  <option name="projectNumber" value="25027230367" />
                 </ConnectionSetting>
               </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />

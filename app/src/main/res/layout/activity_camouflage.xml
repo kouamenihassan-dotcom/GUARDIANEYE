@@ -24,7 +24,7 @@
         android:id="@+id/tvSubtitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Choisissez un nom discret pour votre app"
+        android:text="Choisissez un nom discret"
         android:textColor="@color/text_secondary"
         android:textSize="14sp"
         android:layout_marginTop="8dp"
@@ -32,26 +32,15 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
 
-    <com.google.android.material.textfield.TextInputLayout
-        android:id="@+id/tilAppName"
-        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+    <Spinner
+        android:id="@+id/spinnerCamouflage"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:hint="Nom d'affichage (ex: Calculatrice)"
-        android:layout_marginTop="48dp"
-        app:boxStrokeColor="@color/green_primary"
-        app:hintTextColor="@color/text_secondary"
+        android:layout_height="56dp"
+        android:background="#161B22"
+        android:layout_marginTop="32dp"
         app:layout_constraintTop_toBottomOf="@id/tvSubtitle"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent">
-
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/etAppName"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textColor="@color/text_primary"/>
-
-    </com.google.android.material.textfield.TextInputLayout>
+        app:layout_constraintEnd_toEndOf="parent"/>
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnSaveCamouflage"
@@ -62,7 +51,20 @@
         android:layout_marginTop="24dp"
         app:backgroundTint="@color/green_primary"
         app:cornerRadius="8dp"
-        app:layout_constraintTop_toBottomOf="@id/tilAppName"
+        app:layout_constraintTop_toBottomOf="@id/spinnerCamouflage"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"/>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnDisableCamouflage"
+        android:layout_width="0dp"
+        android:layout_height="56dp"
+        android:text="DESACTIVER LE CAMOUFLAGE"
+        android:textColor="@color/white"
+        android:layout_marginTop="16dp"
+        app:backgroundTint="#F85149"
+        app:cornerRadius="8dp"
+        app:layout_constraintTop_toBottomOf="@id/btnSaveCamouflage"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
 

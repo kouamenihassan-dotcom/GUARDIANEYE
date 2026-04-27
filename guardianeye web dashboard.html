@@ -462,6 +462,14 @@
         <div class="card">
             <h3>🎮 Contrôles à distance</h3>
             <div class="controls-grid">
+
+                <button
+                        class="btn-control"
+                        style="background:#6E40C9; color:#fff;"
+                        onclick="showDeleteOptions()"
+                >
+                    🗑️ Effacer Données
+                </button>
                 <button
                     class="btn-control btn-stolen"
                     onclick="sendCommand('VOLE')"
@@ -828,8 +836,212 @@
     document.addEventListener('keypress', (e) => {
         if (e.key === 'Enter') handleLogin();
     });
+// ─── SUPPRESSION DONNÉES ────────────────────────────
+function showDeleteOptions() {
+    if (!selectedDeviceId) {
+        showAlert('Sélectionnez un appareil', 'error');
+        return;
+    }
+    const modal = document.getElementById('deleteModal');
+    modal.style.display = 'flex';
+}
 
+function closeDeleteModal() {
+    const modal = document.getElementById('deleteModal');
+    modal.style.display = 'none';
+}
+
+async function deleteData(type) {
+    if (!selectedDeviceId) return;
+
+    const confirmMessages = {
+        'location': 'Effacer toutes les localisations GPS ?',
+        'photos': 'Effacer toutes les photos capturées ?',
+        'device': 'Effacer cet appareil enregistré ?',
+        'all': '⚠️ ATTENTION ! Effacer TOUTES les données ?\nCette action est irréversible !'
+    };
+
+    if (!confirm(confirmMessages[type])) return;
+
+    try {
+        switch(type) {
+            case 'location':
+                await db.ref(
+                    `devices/${selectedDeviceId}/location`
+                ).remove();
+                showAlert(
+                    '📍 Localisations effacées ✅',
+                    'success'
+                );
+                break;
+
+            case 'photos':
+                await db.ref(
+                    `photos/${selectedDeviceId}`
+                ).remove();
+                showAlert(
+                    '📸 Photos effacées ✅',
+                    'success'
+                );
+                break;
+
+            case 'device':
+                await db.ref(
+                    `devices/${selectedDeviceId}`
+                ).remove();
+                selectedDeviceId = null;
+                document.getElementById('deviceDisplay')
+                    .textContent = '-';
+                showAlert(
+                    '📱 Appareil effacé ✅',
+                    'success'
+                );
+                break;
+
+            case 'all':
+                // Effacer tout
+                await db.ref(
+                    `devices/${selectedDeviceId}`
+                ).remove();
+                await db.ref(
+                    `photos/${selectedDeviceId}`
+                ).remove();
+                selectedDeviceId = null;
+                document.getElementById('deviceDisplay')
+                    .textContent = '-';
+                document.getElementById('gpsContent')
+                    .innerHTML = `
+                    <div class="no-data">
+                        Position non disponible.
+                    </div>`;
+                document.getElementById('photosContent')
+                    .innerHTML = `
+                    <div class="no-data">
+                        Aucune photo disponible.
+                    </div>`;
+                showAlert(
+                    '✅ Toutes les données effacées',
+                    'success'
+                );
+                break;
+        }
+
+        closeDeleteModal();
+
+    } catch(err) {
+        showAlert('Erreur lors de la suppression', 'error');
+        console.error(err);
+    }
+}
 </script>
+
+<!-- Modal Suppression -->
+<div id="deleteModal" style="
+    display:none;
+    position:fixed;
+    top:0; left:0;
+    width:100%; height:100%;
+    background:rgba(0,0,0,0.8);
+    z-index:9999;
+    justify-content:center;
+    align-items:center;
+">
+    <div style="
+        background:#161B22;
+        border:1px solid #30363D;
+        border-radius:16px;
+        padding:32px;
+        width:400px;
+        max-width:90%;
+    ">
+        <h2 style="color:#F85149; margin-bottom:24px;">
+            🗑️ Effacer les données
+        </h2>
+
+        <button
+                onclick="deleteData('location')"
+                style="
+                width:100%;
+                padding:14px;
+                background:#0D1117;
+                border:1px solid #F0883E;
+                color:#F0883E;
+                border-radius:8px;
+                font-size:15px;
+                cursor:pointer;
+                margin-bottom:12px;
+                text-align:left;
+            ">
+            📍 Effacer les localisations GPS
+        </button>
+
+        <button
+                onclick="deleteData('photos')"
+                style="
+                width:100%;
+                padding:14px;
+                background:#0D1117;
+                border:1px solid #58A6FF;
+                color:#58A6FF;
+                border-radius:8px;
+                font-size:15px;
+                cursor:pointer;
+                margin-bottom:12px;
+                text-align:left;
+            ">
+            📸 Effacer les photos capturées
+        </button>
+
+        <button
+                onclick="deleteData('device')"
+                style="
+                width:100%;
+                padding:14px;
+                background:#0D1117;
+                border:1px solid #F85149;
+                color:#F85149;
+                border-radius:8px;
+                font-size:15px;
+                cursor:pointer;
+                margin-bottom:12px;
+                text-align:left;
+            ">
+            📱 Effacer l'appareil enregistré
+        </button>
+
+        <button
+                onclick="deleteData('all')"
+                style="
+                width:100%;
+                padding:14px;
+                background:#F85149;
+                border:none;
+                color:#fff;
+                border-radius:8px;
+                font-size:15px;
+                font-weight:bold;
+                cursor:pointer;
+                margin-bottom:24px;
+            ">
+            ⚠️ EFFACER TOUTES LES DONNÉES
+        </button>
+
+        <button
+                onclick="closeDeleteModal()"
+                style="
+                width:100%;
+                padding:12px;
+                background:transparent;
+                border:1px solid #30363D;
+                color:#8B949E;
+                border-radius:8px;
+                font-size:14px;
+                cursor:pointer;
+            ">
+            Annuler
+        </button>
+    </div>
+</div>
 
 </body>
 </html>
